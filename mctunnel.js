@@ -13,7 +13,7 @@ packetManager.registerPackets();
 var connections = [];
 
 server.on("connection", function (socket) {
-    console.log("New incoming connection: " + socket.remoteAddress);
+    console.log("New incoming connection from " + socket.remoteAddress);
     let client = new Client(socket);
     connections[socket] = client;
     
@@ -26,7 +26,7 @@ server.on("connection", function (socket) {
                 client.handle(buffer);
             } catch (e) {
                 console.log(e);
-                console.log(address + " sent a wrong packet. Disconnecting");
+                console.log(address + " sent a wrong packet. Disconnecting player.");
                 socket.destroy();
             }
         }
