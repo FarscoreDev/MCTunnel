@@ -53,17 +53,9 @@ class Client {
     }
 
     set setHost(value) {
-        if (!this.isAllowedIp(this._connection.remoteAddress)) {
-            if (this.getState === 'STATUS') {
-                let motd = this.getErrorMotd("Ssssssh, this is top secret");
-                new PacketStatusResponse(motd).send(this);
-            } else if (this.getState === 'LOGIN') {
-                let msg = this.getErrorLogin("Ssssssh, this is top secret");
-                new PacketLoginKick(msg).send(this);
-            }
-            return;
-        }
-        if (value.endsWith(config.host)) {
+        this._playerIp = this._connection.remoteAddress;
+         this.playerPort = this._connection.remotePort;
+        
             let split = value.split(".");
             let split2 = config.host.split(".");
             let domain = split.slice(0, split.length - split2.length);
@@ -80,15 +72,6 @@ class Client {
             this.allowed = true;
             this.host = domain.join(".");
             console.log(this.host);
-        } else {
-            if (this.getState === 'STATUS') {
-                let motd = this.getErrorMotd("No valid host");
-                new PacketStatusResponse(motd).send(this);
-            } else if (this.getState === 'LOGIN') {
-                let msg = this.getErrorLogin("No valid host");
-                new PacketLoginKick(msg).send(this);
-            }
-        }
     }
 
     get getState() {
@@ -135,14 +118,15 @@ class Client {
             client._remote.setTimeout(1000 * 2);
             client._remote.on('connect', function () {
                 client.setProxy();
+               //give the server players real ip and port, then make a modification to server software
                 console.log("Connected to " + client.host);
                 if (client.getState == 'STATUS') {
-                    let handshake = new PacketHandshake(client._protocol, host, port, 1);
+                    let handshake = new PacketHandshake(client._protocol, this._playerIp, this.playerPort, 1);
                     client._remote.write(handshake.getBuffer());
                     let status = new PacketStatusRequest();
                     client._remote.write(status.getBuffer());
                 } else if (client.getState == 'LOGIN') {
-                    let handshake = new PacketHandshake(client._protocol, host, port, 2);
+                    let handshake = new PacketHandshake(client._protocol, this._playerIp, this.playerPort, 2);
                     client._remote.write(handshake.getBuffer());
                     let login = new PacketLoginStart(client.getUsername);
                     client._remote.write(login.getBuffer());
@@ -195,13 +179,10 @@ class Client {
             },
             "description": {
                 "text": "",
-                "extra": [
-                    {"text": "ERROR: ", "color": "red", "bold": true},
-                    {
-                        "text": err,
-                        "color": "gray",
-                        "bold": false
-                    }, {"text": "\nPlease don't break my system", "color": "white", "italic": true}]
+       "extra": [{
+                "text": "There was an error connecting you to the remote server.",
+                "color": "red"
+            }]
             },
             "favicon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAMAAACdt4HsAAAApVBMVEUAAADxWTpEREBEREDxWTrxWTrxWTruWTpEREBEREDxWTrxWTrsWDrZVjtEREBEREDqWDrSVTtEREBEREDuWTrpWDrrWDpEREBEREDcVjtEREBEREDYVjvtWTrpWDrnWDrFVDzmWDrwWTrvWTroWDrlWDraVjvxWTrvWTrxWTrxWTrqWDrmWDrlWDrxWTrwWTrrWDrqWDrpWDroWDrnWDrsWDruWTrAKR9TAAAALnRSTlMAMAIDEFDvMQUBz2DvNggH8DgJCmHwMQsNaA4PamEy8Dzwn6BjZGlwsCCfoqOjSumyzAAAAmJJREFUWMOt131XmzAUBvAUOgSzwQQdDHzv1m3ogja47//RlqSF3IS8gNj/vMffc07l+oQg9JGfzQahIAzDQJvD2fbTdDb6KDqL+SdRxgmcbc8J1mfSk+7zlzTNNJ+lcsY8YQnKDPqX168Xuebzoihy6Am5hDPoD5TSq2/q1y+rqioDxXeH73IGPe37nnbRBvq6aZpa8+z3rmurJwQk2HxPb+weJNh9J56FxY8JLk9ggu5PCW4PEqZeJPj8mCCen+ZZwq3XnxLE/lDdk+7u3uuPCREhb6904mn/cO/1hJwFCJN/LGDq+/7u1usf4xChGxZwMPhhJx1+l/GA8Mfbi9Efn6bL56kIiH9aPE9w+bJI44AHJNjiWYLD1xUL4AvH/q+xxTtmu7qpCtkp+B2+qWCn4OW+KZVOwou93il4pWcJKz0K9it93Vyv9E2zX+nrAK/03p30es9O2nxSgvkvu/9t83k1o/+0noQ+K6pZHvbkYPmPcVpU87zsycHzRgpYQDnTa2d3cuzEOM1ne/XsHjoxS+Z7eHbLTlziwdkNOnGJl2c37MQlfjy7lU5c4oezu3y3n+7kUq/v5HKv7qTr/NvP2EmXd/XkkOD2rp70vz/4elIkeL2rJ6M/CLVe7+jJ8y0SCYb3RLU/scOzBNN7ota/2OFR8jR9T5z0Nzb7Uyc+U3//Y6MfOvGv//zQz27hZSe2Xq/tJPdKJ7Zer+yk8Gonjgk7eE8b+1PMsOq1Tjwl7Ax3wvHuiMH35zP17ikSHg13UnBPxfLvZ7i7tvz93XN3xsPzM9ydWULru7uzBLF/cvYfwpq+9Ei0TdEAAAAASUVORK5CYII="
         };
@@ -211,17 +192,9 @@ class Client {
         return {
             "text": "",
             "extra": [{
-                "text": "Woops! Something did go wrong while connecting to ",
-                "color": "dark_red"
-            }, {
-                "text": this.host + "" + ((this.port != 25565) ? ( ":" + this.port) : ""),
-                "color": "dark_gray",
-                "bold": true
-            }, {
-                "text": "\n\nError: ",
-                "color": "red",
-                "bold": false
-            }, {"text": err, "color": "gray"}]
+                "text": "There was an error connecting you to the remote server.",
+                "color": "red"
+            }]
         };
     }
 
