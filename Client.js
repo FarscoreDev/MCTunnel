@@ -56,21 +56,9 @@ class Client {
         this._playerIp = this._connection.remoteAddress;
          this.playerPort = this._connection.remotePort;
         
-            let split = value.split(".");
-            let split2 = config.host.split(".");
-            let domain = split.slice(0, split.length - split2.length);
-            if (domain.length > 1 && domain[domain.length - 1].split("-").length === 2) {
-                let dow = domain[domain.length - 1];
-                let split = dow.split("-");
-                let portca = split[split.length - 1];
-                let parsed = parseInt(portca);
-                if (parsed > 0 && parsed < 65535) {
-                    this.port = parsed;
-                    domain[domain.length - 1] = split[0];
-                }
-            }
+           
             this.allowed = true;
-            this.host = domain.join(".");
+            this.host = config.serverAddr;
             console.log(this.host);
     }
 
@@ -110,8 +98,6 @@ class Client {
     }
 
     connect(client) {
-        if (!this.allowed)
-            return;
         this.lookup(client.host, client.port, function (host, port) {
             client._remote = new net.Socket();
             client._remote.connect(port, host);
