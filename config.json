@@ -1,8 +1,5 @@
 {
-  "host": "your_wildcard_domain",
+  "serverAddr": "server_address",
   "listenIp":"0.0.0.0",
-  "listenPort":"25565",
-  "allowed_ips":[
-    "127.0.0.1"
-  ]
+  "listenPort":"25565"
 }
